@@ -1,432 +1,322 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import axios from "axios";
-import { MdOutlineUpcoming } from "react-icons/md";
-import { FaClockRotateLeft } from "react-icons/fa6";
-// *********************************Chart Testing Imports ***********************************//
-
-import { TrendingUp } from "lucide-react";
-import { Bar, BarChart } from "recharts";
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
-
+import logo from "../assets/images/logo.png";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-
-// ****************************************************************************************//
-
-import { FaUserCircle, FaBell, FaThLarge } from "react-icons/fa";
-import { FaRegCircleQuestion } from "react-icons/fa6";
-import { FaStreetView } from "react-icons/fa";
-import { RiDashboardLine } from "react-icons/ri";
-import { PiStudentBold } from "react-icons/pi";
-import { GiTeacher } from "react-icons/gi";
-import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TrendingUp } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext.jsx";
+import { apiClient } from "@/lib/api";
+import toast from "react-hot-toast";
 
 const Dashboard = () => {
-  const [data, setData] = useState([
-    {
-      invoice: "INV001",
-      paymentStatus: "Paid",
-      totalAmount: "$250.00",
-      paymentMethod: "Credit Card",
-    },
-    {
-      invoice: "INV002",
-      paymentStatus: "Pending",
-      totalAmount: "$150.00",
-      paymentMethod: "PayPal",
-    },
-    {
-      invoice: "INV003",
-      paymentStatus: "Unpaid",
-      totalAmount: "$350.00",
-      paymentMethod: "Bank Transfer",
-    },
-    {
-      invoice: "INV004",
-      paymentStatus: "Paid",
-      totalAmount: "$450.00",
-      paymentMethod: "Credit Card",
-    },
-    {
-      invoice: "INV005",
-      paymentStatus: "Paid",
-      totalAmount: "$550.00",
-      paymentMethod: "PayPal",
-    },
-    {
-      invoice: "INV006",
-      paymentStatus: "Pending",
-      totalAmount: "$200.00",
-      paymentMethod: "Bank Transfer",
-    },
-    {
-      invoice: "INV007",
-      paymentStatus: "Unpaid",
-      totalAmount: "$300.00",
-      paymentMethod: "Credit Card",
-    },
-  ]);
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
-  const chartData = [
-    { month: "January", desktop: 186, mobile: 80 },
-    { month: "February", desktop: 305, mobile: 200 },
-    { month: "March", desktop: 237, mobile: 120 },
-    { month: "April", desktop: 73, mobile: 190 },
-    { month: "May", desktop: 209, mobile: 130 },
-    { month: "June", desktop: 214, mobile: 140 },
-  ];
-  const chartConfig = {
-    desktop: {
-      label: "Desktop",
-      color: "green",
-    },
-    mobile: {
-      label: "Mobile",
-      color: "blue",
-    },
-  };
-
-  const chartData2 = [
-    { month: "January", desktop: 186 },
-    { month: "February", desktop: 305 },
-    { month: "March", desktop: 237 },
-    { month: "April", desktop: 73 },
-    { month: "May", desktop: 209 },
-    { month: "June", desktop: 214 },
-  ];
-  const chartConfig2 = {
-    desktop: {
-      label: "Desktop",
-      color: "var(--chart-1)",
-    },
-  };
-
-  const [metrixData, setMatrixData] = useState();
-  const [matrixDataFetched, setMatrixDataFetched] = useState(false)
-  const [studentAnalysisData, setStudentAnalysisData] = useState();
-  const [StudentAnalysisDataFetched, setStudentAnalysisDataFetched]= useState(false)
-  let token = "";
+  const [sessions, setSessions] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    if (!isAuthenticated) {
+      navigate("/authenticate/login");
+      return;
+    }
 
-    const fetchMatrixData = async () => {
-      setMatrixDataFetched(true);
+    const loadData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch("http://localhost:8000/api/metrics/matrix", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!res.ok) throw new Error("Failed to fetch matrix data");
-        const data = await res.json();
-        setMatrixData(data);
-      } catch (err) {
-        console.log(err);
+        const [sessionsRes, resourcesRes, feedbackRes] = await Promise.all([
+          apiClient.get("/sessions", {
+            params: user?.isCounselor ? { counselor: user._id } : { student: user._id },
+          }),
+          apiClient.get("/resources"),
+          apiClient.get("/feedback"),
+        ]);
+
+        setSessions(sessionsRes.data.data || []);
+        setResources(resourcesRes.data.data || []);
+        setFeedback(feedbackRes.data.data || []);
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+        toast.error("Unable to load dashboard data");
       } finally {
-        setMatrixDataFetched(false);
+        setLoading(false);
       }
     };
 
-    const fetchStudentAnalysisData = async () => {
-      setStudentAnalysisDataFetched(true);
-      try {
-        const res = await fetch(
-          "http://localhost:8000/api/metrics/student-analysis",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!res.ok) throw new Error("Failed to fetch student analysis data");
-        const data = await res.json();
-        setStudentAnalysisData(data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setStudentAnalysisDataFetched(false);
-      }
-    };
+    loadData();
+  }, [isAuthenticated, navigate, user]);
 
-    fetchMatrixData();
-    fetchStudentAnalysisData();
-  }, []);
+  const upcomingSessions = useMemo(
+    () =>
+      sessions
+        .filter((session) => new Date(session.scheduledTime) > new Date())
+        .sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime))
+        .slice(0, 5),
+    [sessions]
+  );
 
+  const sessionChartData = useMemo(() => {
+    const grouped = sessions.reduce((acc, session) => {
+      const key = new Date(session.scheduledTime).toLocaleDateString();
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(grouped)
+      .slice(-6)
+      .map(([date, total]) => ({ date, total }));
+  }, [sessions]);
+
+  const feedbackChartData = useMemo(() => {
+    const grouped = feedback.reduce((acc, item) => {
+      const key = new Date(item.createdAt).toLocaleDateString();
+      acc[key] = (acc[key] || 0) + (item.rating || 0);
+      return acc;
+    }, {});
+
+    return Object.entries(grouped)
+      .slice(-6)
+      .map(([date, rating]) => ({ date, rating }));
+  }, [feedback]);
 
   return (
-    <div>
+    <div className="w-full">
       <ResizablePanelGroup
         direction="horizontal"
         className="min-h-[100vh] max-w-full rounded-lg border md:min-w-[450px]"
       >
-        {/* Sidebar */}
         <ResizablePanel defaultSize={20} className="bg-white border-r">
           <div className="flex flex-col h-full">
-            {/* Logo */}
             <div className="p-5 flex items-center gap-2 border-b">
-              <FaThLarge className="text-blue-500 text-2xl" />
+              <img src={logo} alt="MindEase" />
               <span className="text-xl font-bold text-pink-600">MindEase</span>
             </div>
 
-            {/* Sidebar Items */}
             <nav className="flex flex-col p-4 gap-4 text-gray-700 font-medium">
-              <div className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-                <FaStreetView /> Overview
+              <div className="flex items-center gap-2">Dashboard</div>
+              <div
+                className="flex items-center gap-2 cursor-pointer hover:text-blue-500"
+                onClick={() => navigate("/Booking")}
+              >
+                Manage Sessions
               </div>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-                <RiDashboardLine /> Analytic Dashboard
-              </div>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-                <PiStudentBold /> Students
-              </div>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-                <GiTeacher /> Counselors
+              <div
+                className="flex items-center gap-2 cursor-pointer hover:text-blue-500"
+                onClick={() => navigate("/resourcehub")}
+              >
+                Resources
               </div>
             </nav>
+
+            <div className="mt-auto p-4 text-sm text-gray-500">
+              Signed in as <br />
+              <span className="font-medium">{user?.username || user?.email}</span>
+            </div>
           </div>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
 
-        {/* Main Content */}
         <ResizablePanel defaultSize={80} className="bg-gray-50">
-          <div className="flex flex-col h-full px-12">
-            {/* Top Navbar */}
-            <div className="flex justify-end gap-10 items-center p-4 bg-white border-b">
-              <div className="flex items-center gap-6">
-                <FaBell className="text-gray-600 cursor-pointer" />
-                <FaRegCircleQuestion className="text-gray-600 cursor-pointer" />
-                <FaUserCircle className="text-gray-600 text-2xl cursor-pointer" />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-8">
-              {/* Heading */}
-              <h1 className="text-2xl font-bold text-gray-800 mb-6">MIET</h1>
-
-              <h1>Key Metrics</h1>
-
-              {/* Overview Cards */}
-              <div className="flex items-center justify-around py-2 gap-6 mb-4">
-                <div className="bg-white px-8 py-3 rounded-lg border">
-                  <h2 className="text-sm text-gray-600">Total Students</h2>
-                  <p className="text-2xl font-bold text-black">1,240</p>
-                </div>
-                <div className="bg-white px-8 py-3 rounded-lg border">
-                  <h2 className="text-sm text-gray-600">Active Counselors</h2>
-                  <p className="text-2xl font-bold text-black">48</p>
-                </div>
-                <div className="bg-white px-8 py-3 rounded-lg border">
-                  <h2 className="text-sm text-gray-600">Open Tickets</h2>
-                  <p className="text-2xl font-bold text-black">32</p>
-                </div>
-                <div className="bg-white px-8 py-3 rounded-lg border">
-                  <h2 className="text-sm text-gray-600">Upcoming Events</h2>
-                  <p className="text-2xl font-bold text-black">5</p>
-                </div>
-              </div>
-
-              {/* Analytics Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Placeholder chart 1 */}
-                {/* *************************************************************************** */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Student Performance Trends</CardTitle>
-                    <CardDescription>
-                      Average pre vs post counseling scores over time.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer config={chartConfig}>
-                      <LineChart
-                        accessibilityLayer
-                        data={chartData}
-                        margin={{
-                          left: 12,
-                          right: 12,
-                        }}
-                      >
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                          dataKey="month"
-                          tickLine={false}
-                          axisLine={false}
-                          tickMargin={8}
-                          tickFormatter={(value) => value.slice(0, 3)}
-                        />
-                        <ChartTooltip
-                          cursor={false}
-                          content={<ChartTooltipContent />}
-                        />
-                        <Line
-                          dataKey="desktop"
-                          type="monotone"
-                          stroke="blue"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                        <Line
-                          dataKey="mobile"
-                          type="monotone"
-                          stroke="red"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ChartContainer>
-                  </CardContent>
-                  <CardFooter>
-                    <div className="flex w-full items-start gap-2 text-sm">
-                      <div className="flex text-muted-foreground items-center gap-2 leading-none font-medium">
-                        Post-Counseling Score
-                      </div>
-                      <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                        Pre-Counseling Score
-                      </div>
-                    </div>
-                  </CardFooter>
-                </Card>
-
-                {/* *************************************************************************** */}
-
-                {/* Placeholder chart 2 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Counseling Session Impact</CardTitle>
-                    <CardDescription>
-                      Average improvement score by counseling type.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer config={chartConfig2}>
-                      <BarChart accessibilityLayer data={chartData2}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                          dataKey="month"
-                          tickLine={false}
-                          tickMargin={10}
-                          axisLine={false}
-                          tickFormatter={(value) => value.slice(0, 3)}
-                        />
-                        <ChartTooltip
-                          cursor={false}
-                          content={<ChartTooltipContent hideLabel />}
-                        />
-                        <Bar dataKey="desktop" fill="green" radius={8} />
-                      </BarChart>
-                    </ChartContainer>
-                  </CardContent>
-                  <CardFooter className="flex-col items-start gap-2 text-sm">
-                    <div className="flex gap-2 text-center w-fit mx-auto justify-center leading-none font-medium">
-                      Average Impact Score
-                      <TrendingUp className="h-4 w-4" />
-                    </div>
-                  </CardFooter>
-                </Card>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="mt-10 bg-white shadow-md p-6 rounded-lg border">
-                <h1 className="text-black text-2xl font-bold pb-8">
-                  Student Progress & Activities
-                </h1>
-                <h2 className="text-lg font-semibold">
-                  Individual Student Progress
-                </h2>
-                <p className="text-xs text-gray-600 pb-4">
-                  Overview of student improvement after counseling.
+          <div className="flex flex-col h-full px-8 py-6">
+            <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
+                <p className="text-sm text-gray-500">
+                  Overview of your sessions, resources, and student feedback
                 </p>
-                <div className="flex gap-4">
-                  <div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigate("/Booking")}
+                >
+                  Book a session
+                </Button>
+                <Button variant="default" size="sm" onClick={() => navigate("/resourcehub")}
+                >
+                  Add Resource
+                </Button>
+              </div>
+            </header>
+
+            {loading ? (
+              <div className="flex-1 flex items-center justify-center text-gray-600">
+                Loading dashboard data...
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto pb-8">
+                <section className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Total Sessions</CardTitle>
+                      <CardDescription>All scheduled sessions</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-3xl font-semibold">
+                      {sessions.length}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Upcoming</CardTitle>
+                      <CardDescription>Next scheduled meetings</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-3xl font-semibold">
+                      {upcomingSessions.length}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Resources</CardTitle>
+                      <CardDescription>Published learning assets</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-3xl font-semibold">
+                      {resources.length}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Feedback Entries</CardTitle>
+                      <CardDescription>Student reflections</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-3xl font-semibold">
+                      {feedback.length}
+                    </CardContent>
+                  </Card>
+                </section>
+
+                <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle>Sessions per Day</CardTitle>
+                        <CardDescription>Recent booking activity</CardDescription>
+                      </div>
+                      <TrendingUp className="h-5 w-5 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <BarChart width={400} height={250} data={sessionChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" fontSize={12} />
+                        <Bar dataKey="total" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Feedback Rating Trend</CardTitle>
+                      <CardDescription>Sum of ratings by day</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <LineChart width={400} height={250} data={feedbackChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" fontSize={12} />
+                        <Line type="monotone" dataKey="rating" stroke="#f87171" strokeWidth={2} />
+                      </LineChart>
+                    </CardContent>
+                  </Card>
+                </section>
+
+                <section className="mt-8 bg-white rounded-lg border">
+                  <div className="p-4 border-b">
+                    <h2 className="text-lg font-semibold text-gray-800">Upcoming Sessions</h2>
+                    <p className="text-sm text-gray-500">
+                      Next five scheduled sessions
+                    </p>
+                  </div>
+                  {upcomingSessions.length === 0 ? (
+                    <p className="p-4 text-sm text-gray-600">No upcoming sessions found.</p>
+                  ) : (
                     <Table>
-                      <TableCaption>
-                        A list of your recent invoices.
-                      </TableCaption>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[100px]">Invoice</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Student</TableHead>
+                          <TableHead>Counsellor</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Method</TableHead>
-                          <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {data.map((data) => (
-                          <TableRow key={data.invoice}>
-                            <TableCell className="font-medium">
-                              {data.invoice}
+                        {upcomingSessions.map((session) => (
+                          <TableRow key={session._id}>
+                            <TableCell>
+                              {new Date(session.scheduledTime).toLocaleString()}
                             </TableCell>
-                            <TableCell>{data.paymentStatus}</TableCell>
-                            <TableCell>{data.paymentMethod}</TableCell>
-                            <TableCell className="text-right">
-                              {data.totalAmount}
+                            <TableCell>
+                              {session.student?.username || session.student?.email || "-"}
+                            </TableCell>
+                            <TableCell>
+                              {session.counselor?.username || session.counselor?.email || "-"}
+                            </TableCell>
+                            <TableCell className="capitalize">{session.status}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </section>
+
+                <section className="mt-8 bg-white rounded-lg border">
+                  <div className="p-4 border-b">
+                    <h2 className="text-lg font-semibold text-gray-800">Recent Feedback</h2>
+                    <p className="text-sm text-gray-500">
+                      Latest reflections shared after sessions
+                    </p>
+                  </div>
+                  {feedback.length === 0 ? (
+                    <p className="p-4 text-sm text-gray-600">No feedback submitted yet.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Session</TableHead>
+                          <TableHead>Student</TableHead>
+                          <TableHead>Rating</TableHead>
+                          <TableHead>Comments</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {feedback.slice(0, 5).map((item) => (
+                          <TableRow key={item._id}>
+                            <TableCell>
+                              {new Date(item.createdAt).toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              {item.session?.student?.username || item.session?.student?.email || "-"}
+                            </TableCell>
+                            <TableCell>{item.rating}</TableCell>
+                            <TableCell className="max-w-md truncate">
+                              {item.comments || "—"}
                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
-                      <TableFooter>
-                        <TableRow>
-                          <TableCell colSpan={3}>Total</TableCell>
-                          <TableCell className="text-right">
-                            $2,500.00
-                          </TableCell>
-                        </TableRow>
-                      </TableFooter>
                     </Table>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-center">
-                      <div>
-                        <MdOutlineUpcoming className="text-3xl text-cyan-500" />{" "}
-                      </div>
-                      <div className="font-bold text-lg text-center">
-                        Upcoming Sessions
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 px-16">
-                      {/* map logic of the data */}
-                      <div>
-                        <FaClockRotateLeft className="text-xl text-cyan-500" />
-                      </div>
-                      <div className="flex-col text-sm">
-                        <p>Frank Green</p>
-                        <p className="text-xs">10:00 AM with Sarah Lee</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  )}
+                </section>
               </div>
-            </div>
+            )}
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

@@ -9,12 +9,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
+import logo from "../assets/images/logo.png"
 import { FaUserCircle, FaBell, FaThLarge } from "react-icons/fa";
 import { MdDashboard, MdForum, MdEvent, MdBook } from "react-icons/md";
 import { FaRegComment, FaRegEye } from "react-icons/fa";
 import { FaCalendarAlt, FaMapMarkerAlt, FaPaperPlane } from "react-icons/fa";
 import f from "../assets/images/f.png";
+import { useNavigate } from "react-router-dom";
 
 import event1 from "../assets/images/event1.png";
 import event2 from "../assets/images/event2.png";
@@ -26,7 +27,7 @@ const PeerToPeer = () => {
       title: "Coping with exam stress during finals",
       tags: ["Academics", "Stress", "Exams"],
       description:
-        "Finals are approaching and I'm really struggling with the pressure. Any tips for managing stress and staying focused?",
+      "Finals are approaching and I'm really struggling with the pressure. Any tips for managing stress and staying focused?",
       author: "Student A",
       time: "2 hours ago",
       comments: 15,
@@ -36,7 +37,7 @@ const PeerToPeer = () => {
       title: "Building new friendships in a new city",
       tags: ["Social", "Loneliness", "Community"],
       description:
-        "Just moved to a new city for university and finding it hard to meet people. Any advice on making new friends and building a support network?",
+      "Just moved to a new city for university and finding it hard to meet people. Any advice on making new friends and building a support network?",
       author: "Newcomer B",
       time: "yesterday",
       comments: 22,
@@ -46,7 +47,7 @@ const PeerToPeer = () => {
       title: "Strategies for improving mental well-being",
       tags: ["Mental Health", "Self-Care", "Well-being"],
       description:
-        "Looking for practical strategies and daily habits to boost mental well-being. What works for you all?",
+      "Looking for practical strategies and daily habits to boost mental well-being. What works for you all?",
       author: "Wellness C",
       time: "3 days ago",
       comments: 38,
@@ -56,14 +57,14 @@ const PeerToPeer = () => {
       title: "Navigating career choices after graduation",
       tags: ["Career", "Future", "Guidance"],
       description:
-        "Graduation is just around the corner and I'm feeling lost about my career path. How did you decide what to do next?",
+      "Graduation is just around the corner and I'm feeling lost about my career path. How did you decide what to do next?",
       author: "Graduate D",
       time: "1 week ago",
       comments: 10,
       views: 190,
     },
   ];
-
+  
   const events = [
     {
       title: "Mindfulness & Meditation Workshop",
@@ -87,7 +88,7 @@ const PeerToPeer = () => {
       action: "Sign Up",
     },
   ];
-
+  
   const messages = [
     { sender: "support", text: "Hi there! How can I help you today?" },
     {
@@ -99,7 +100,8 @@ const PeerToPeer = () => {
       text: "I understand. Many students feel that way sometimes. Would you like to talk about what specifically is making you feel overwhelmed?",
     },
   ];
-
+  
+  const navigate = useNavigate();        
   return (
     <div className="w-full">
       <ResizablePanelGroup
@@ -111,7 +113,7 @@ const PeerToPeer = () => {
           <div className="flex flex-col">
             {/* Logo */}
             <div className="p-5 flex items-center gap-2 border-b">
-              <FaThLarge className="text-blue-500 text-2xl" />
+              <img src={logo} alt="" />
               <span className="text-xl font-bold text-pink-600">MindEase</span>
             </div>
 
@@ -140,6 +142,12 @@ const PeerToPeer = () => {
           <div className="flex flex-col h-full">
             {/* Navbar */}
             <div className="flex justify-end gap-10 items-center p-4 bg-white">
+              <button
+                className="bg-teal-600 shadow-md text-sm hover:bg-teal-700 text-white px-4 py-2 rounded"
+                onClick={() => navigate("/")}
+              >
+                Back to home
+              </button>
               <input
                 type="text"
                 placeholder="Search topics, volunteers, or events..."

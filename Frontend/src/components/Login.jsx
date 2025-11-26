@@ -1,72 +1,45 @@
-import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import axios from "axios"
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import logo from '../assets/images/logo.png';
+import { useAuth } from '@/context/AuthContext.jsx';
 
 const LoginComponent = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPopup, setShowPopup] = useState(false);
-  const [role, setRole] = useState("norole");
-    const [isCounselor, setIsCounselor] = useState(role === "Student" ? false : true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    const HandleSigninApiCall = async () => {
-      try {
-        console.log(isCounselor);
-
-        const body = {
-          email: email,
-          password: password,
-        };
-
-        console.log("Sending data to the backend", body);
-
-        const res = await axios.post(
-          "https://mindease-backend-2qv5.onrender.com/api/auth/login/",
-          body,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        console.log(res.data);
-        console.log("Login Successful");
-
-        navigate("/");
-      } catch (err) {
-        console.log("An error occurred:", err);
-      }
-    };
-
-    HandleSigninApiCall();
+    try {
+      await login({ email, password });
+      toast.success('Logged in successfully');
+      navigate('/');
+    } catch (err) {
+      console.error('Failed to login', err);
+      const message = err?.response?.data?.message || 'Failed to sign in. Please try again.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
-
-
-  const handleGoogleSignIn = () => {
-    console.log("Google sign in clicked");
-  };
-
-  useEffect(() => {
-    setShowPopup(true);
-  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
       <div className="w-full max-w-sm bg-white rounded-lg border-2 p-4">
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignIn}>
           <div className="text-center mb-8">
             <div className="flex items-center justify-center">
-              <div className="text-pink-500 text-2xl mr-2">logo</div>
+              <div className="text-pink-500 text-2xl mr-2">
+                <img src={logo} alt="" />
+              </div>
               <h1 className="text-4xl font-bold text-blue-500">
                 <i>MindEase</i>
               </h1>
@@ -80,6 +53,12 @@ const LoginComponent = () => {
               Log in to continue your journey.
             </p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-3">
             <div>
@@ -112,7 +91,8 @@ const LoginComponent = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   required
-                  className="w-full pl-10 pr-3 text-sm py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                  className="w-full pl-10 pr-3 text-sm py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -147,29 +127,58 @@ const LoginComponent = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  className="w-full pl-10 text-sm pr-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                  className="w-full pl-10 text-sm pr-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-4 rounded-md transition duration-200 flex items-center justify-center"
+              disabled={loading || !email || !password}
+              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-medium py-1 px-4 rounded-md transition duration-200 flex items-center justify-center"
             >
-              Login
-              <svg
-                className="w-4 h-4 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              {loading ? (
+                <span className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Signing in...
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  Login
+                  <svg
+                    className="w-4 h-4 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </span>
+              )}
             </button>
           </div>
         </form>
@@ -181,12 +190,7 @@ const LoginComponent = () => {
         </div>
 
         <div className="space-y-3">
-          <button
-            onClick={handleGoogleSignIn}
-            className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-1 px-4 rounded-md transition duration-200 flex items-center justify-center"
-          >
-            Sign in with Google
-          </button>
+            <div className="text-center text-sm text-gray-600">Google sign-in is coming soon.</div>
         </div>
 
         <div className="text-center mt-4">
@@ -199,36 +203,6 @@ const LoginComponent = () => {
           </a>
         </div>
       </div>
-
-      <Dialog open={showPopup} onOpenChange={setShowPopup}>
-        <DialogContent className="backdrop-blur-sm bg-white/70 border border-gray-200 rounded-lg w-80">
-          <DialogHeader>
-            <DialogTitle>Login As</DialogTitle>
-            <DialogDescription>Choose your role to continue</DialogDescription>
-          </DialogHeader>
-
-          <div className="mt-4 p-4 flex flex-col gap-4">
-            <button
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick={() => {
-                setRole("Student");
-                setShowPopup(false);
-              }}
-            >
-              Student
-            </button>
-            <button
-              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={() => {
-                setRole("Admin");
-                setShowPopup(false);
-              }}
-            >
-              Admin
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

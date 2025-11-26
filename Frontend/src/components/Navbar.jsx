@@ -1,5 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import logo from "../assets/images/logo.png"
+import { useAuth } from "@/context/AuthContext.jsx";
 
 const Navbar = ({
   homeRef,
@@ -8,18 +11,27 @@ const Navbar = ({
   howItWorksRef,
   contactRef,
 }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
+
   const handleNavigation = (ref) => {
     ref.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  const navigate = useNavigate();
+  const handleLogout = () => {
+    logout();
+    toast.success("Logged out successfully");
+    navigate("/");
+  };
 
   return (
-    <div className="px-8 py-2 flex items-center bg-orange-500">
+    <div className="px-8 py-2 flex items-center text-[#FFC666]">
       <div className="flex gap-2 basis-[25%] items-center">
-        <div>logo</div>
+        <div>
+          <img src={logo} alt="" className="w-6" />
+        </div>
         <div className="text-[#2589FB] font-bold text-xl">MindEase</div>
       </div>
+
       <div className="w-full">
         <ul className="list-none flex items-center justify-center gap-8">
           <li
@@ -54,18 +66,30 @@ const Navbar = ({
           </li>
         </ul>
       </div>
+
       <div className="basis-[20%] text-end">
-        <Button
-          variant="sih"
-          size="sm"
-          className="active:scale-[0.9] transition-all duration-100"
-          onClick={() => navigate("/authenticate/login")}
-        >
-          Login
-        </Button>
+        {!isAuthenticated ? (
+          <Button
+            variant="sih"
+            size="sm"
+            className="active:scale-[0.9] transition-all duration-100"
+            onClick={() => navigate("/authenticate/login")}
+          >
+            Login
+          </Button>
+        ) : (
+          <Button
+            variant="sih"
+            size="sm"
+            className="active:scale-[0.9] transition-all duration-100"
+            onClick={handleLogout}
+          >
+            Logout
+          </Button>
+        )}
       </div>
     </div>
   );
 };
 
-export default Navbar
+export default Navbar;
