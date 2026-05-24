@@ -1,6 +1,5 @@
-# MindEase
+#🧠 MindEase – Focus on Unlocking Potential  
 
-# 🧠 MindEase – Focus on Unlocking Potential  
     MindEase is a Digital Mental Health and Psychological Support System for Students in Higher Education
 
 ---
