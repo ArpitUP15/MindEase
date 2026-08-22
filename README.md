@@ -38,12 +38,11 @@ Backend:
 
 The Vangaurds
 👨‍💻 Team Members-
-
-Muskan Arora – UI/UX Designing
+Arpit Bansal – Resource Hub (Frontend)
 
 Mohit Goswami – Frontend 
 
-Arpit Bansal – Resource Hub
+Muskan Arora – UI/UX Designing
 
 Manish Pal – Database & Booking System
 
